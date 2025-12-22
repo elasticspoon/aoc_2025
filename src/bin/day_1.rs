@@ -34,28 +34,25 @@ fn get_pass_complex(code: &str) -> i32 {
 }
 
 fn rotate(initial: i32, turn: &str) -> (i32, i32) {
-    let first_letter = turn.chars().next();
-    let mut num: i32 = turn[1..].parse().unwrap();
+    let first_letter = turn.chars().next().expect("Should have direction.");
+    let num: i32 = turn[1..].parse().expect("Should have a turn distance.");
     match first_letter {
-        Some('L') => {
-            num = initial - num;
-            let mut turns = (num / 100).abs();
-            let mut rem = num % 100;
-            if rem < 0 {
-                rem += 100;
-            }
-            if initial > 0 && num <= 0 {
+        'L' => {
+            let new_pos = initial - num;
+            let mut turns = (new_pos / 100).abs();
+            let rem = new_pos.rem_euclid(100);
+            if initial > 0 && new_pos <= 0 {
                 turns += 1;
             }
             (turns, rem)
         }
-        Some('R') => {
-            num += initial;
-            let turns = num / 100;
-            let rem = num % 100;
+        'R' => {
+            let new_pos = initial + num;
+            let turns = new_pos / 100;
+            let rem = new_pos % 100;
             (turns, rem)
         }
-        _ => panic!("unreachable"),
+        _ => panic!("Expected turned direction of 'L' or 'R'"),
     }
 }
 
