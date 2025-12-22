@@ -1,24 +1,19 @@
 use std::fs::read_to_string;
 
 fn main() {
-    part_1();
-}
-
-fn part_1() {
     let input = read_to_string("input/day1_1.txt").expect("Should have been able to read file");
-    println!("password 1: {}", get_pass(input));
+    println!("password 1: {}", get_pass(&input));
+    println!("password 2: {}", get_pass_complex(&input));
 }
 
-fn get_pass(code: String) -> i32 {
+fn get_pass(code: &str) -> i32 {
     let mut loc = 50;
     let mut times = 0;
     for line in code.lines() {
-        // if line.is_empty() {
-        //     continue;
-        // }
-        loc = rotate(loc, line);
+        let (_, rem) = rotate(loc, line);
+        loc = rem;
 
-        if loc == 0 {
+        if rem == 0 {
             times += 1;
         }
     }
@@ -26,25 +21,42 @@ fn get_pass(code: String) -> i32 {
     times
 }
 
-fn rotate(initial: i32, turn: &str) -> i32 {
+fn get_pass_complex(code: &str) -> i32 {
+    let mut loc = 50;
+    let mut times = 0;
+    for line in code.lines() {
+        let (zero_count, place) = rotate(loc, line);
+        loc = place;
+        times += zero_count;
+    }
+
+    times
+}
+
+fn rotate(initial: i32, turn: &str) -> (i32, i32) {
     let first_letter = turn.chars().next();
     let mut num: i32 = turn[1..].parse().unwrap();
     match first_letter {
         Some('L') => {
             num = initial - num;
+            let mut turns = (num / 100).abs();
+            let mut rem = num % 100;
+            if rem < 0 {
+                rem += 100;
+            }
+            if initial > 0 && num <= 0 {
+                turns += 1;
+            }
+            (turns, rem)
         }
         Some('R') => {
             num += initial;
+            let turns = num / 100;
+            let rem = num % 100;
+            (turns, rem)
         }
         _ => panic!("unreachable"),
     }
-
-    let mut res = num % 100;
-    if res < 0 {
-        res += 100;
-    };
-
-    res
 }
 
 #[cfg(test)]
@@ -63,39 +75,94 @@ L1
 L99
 R14
 L82";
-        let got = get_pass(moves.to_string());
+        let got = get_pass(moves);
         assert_eq!(got, 3);
+    }
+
+    #[test]
+    fn test_get_pass_complex() {
+        let moves = "L68
+L30
+R48
+L5
+R60
+L55
+L1
+L99
+R14
+L82";
+        let got = get_pass_complex(moves);
+        assert_eq!(got, 6);
     }
 
     #[test]
     fn test_rotate_left() {
         let turn = "L32";
-        let got = rotate(50, turn);
+        let (turns, loc) = rotate(50, turn);
 
-        assert_eq!(got, 18);
+        assert_eq!(loc, 18);
+        assert_eq!(turns, 0);
     }
 
     #[test]
     fn test_rotate_right() {
         let turn = "R32";
-        let got = rotate(50, turn);
+        let (turns, loc) = rotate(50, turn);
 
-        assert_eq!(got, 82);
+        assert_eq!(loc, 82);
+        assert_eq!(turns, 0);
+    }
+
+    #[test]
+    fn test_rotate_right_exact() {
+        let turn = "R50";
+        let (turns, loc) = rotate(50, turn);
+
+        assert_eq!(loc, 0);
+        assert_eq!(turns, 1);
+    }
+
+    #[test]
+    fn test_rotate_left_exact_100() {
+        let turn = "L101";
+        let (turns, loc) = rotate(1, turn);
+
+        assert_eq!(loc, 0);
+        assert_eq!(turns, 2);
+    }
+    #[test]
+    fn test_rotate_left_exact_zero() {
+        let turn = "L50";
+        let (turns, loc) = rotate(50, turn);
+
+        assert_eq!(loc, 0);
+        assert_eq!(turns, 1);
     }
 
     #[test]
     fn test_rotate_left_over() {
         let turn = "L180";
-        let got = rotate(50, turn);
+        let (turns, loc) = rotate(50, turn);
 
-        assert_eq!(got, 70);
+        assert_eq!(loc, 70);
+        assert_eq!(turns, 2);
+    }
+
+    #[test]
+    fn test_rotate_left_from_zero() {
+        let turn = "L20";
+        let (turns, loc) = rotate(0, turn);
+
+        assert_eq!(loc, 80);
+        assert_eq!(turns, 0);
     }
 
     #[test]
     fn test_rotate_right_over() {
         let turn = "R320";
-        let got = rotate(50, turn);
+        let (turns, loc) = rotate(50, turn);
 
-        assert_eq!(got, 70);
+        assert_eq!(loc, 70);
+        assert_eq!(turns, 3);
     }
 }
