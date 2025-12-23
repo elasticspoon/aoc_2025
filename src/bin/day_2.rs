@@ -2,10 +2,11 @@ use std::fs::read_to_string;
 
 fn main() {
     let input = read_to_string("input/day2.txt").expect("Should have been able to read file");
-    println!("sum 1: {}", id_sum(&input));
+    println!("sum 1: {}", id_sum(&input, invalid_id));
+    println!("sum 2: {}", id_sum(&input, invalid_id_two));
 }
 
-fn id_sum(ranges: &str) -> i64 {
+fn id_sum(ranges: &str, invalid_func: fn(i64) -> bool) -> i64 {
     ranges
         .trim_end()
         .split(",")
@@ -20,7 +21,7 @@ fn id_sum(ranges: &str) -> i64 {
 
             let mut total = 0;
             for id in start..=end {
-                if invalid_id(id) {
+                if invalid_func(id) {
                     total += id;
                 }
             }
@@ -28,6 +29,24 @@ fn id_sum(ranges: &str) -> i64 {
             total
         })
         .sum()
+}
+
+fn invalid_id_two(id: i64) -> bool {
+    let digits = id.checked_ilog10().unwrap_or(0) + 1;
+    let str = id.to_string();
+
+    for size in 1..=(digits / 2) {
+        let first = &str.as_bytes()[..size as usize];
+        let v = str
+            .as_bytes()
+            .chunks(size as usize)
+            .all(|chunk| chunk == first);
+        if v {
+            return true;
+        }
+    }
+
+    false
 }
 
 fn invalid_id(id: i64) -> bool {
@@ -42,21 +61,42 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_invalid_id_invalid_two_short() {
+        assert!(invalid_id_two(11), "expected invalid got valid");
+    }
+
+    #[test]
+    fn test_invalid_id_invalid_two_long() {
+        assert!(invalid_id_two(121212), "expected invalid got valid")
+    }
+
+    #[test]
+    fn test_invalid_id_valid_two_long() {
+        assert!(!invalid_id_two(12345), "expected invalid got valid")
+    }
+
+    #[test]
     fn test_id_sum_simple() {
         let id_ranges = "11-22";
-        assert_eq!(id_sum(id_ranges), 33)
+        assert_eq!(id_sum(id_ranges, invalid_id), 33)
     }
 
     #[test]
     fn test_id_sum_multiple() {
         let id_ranges = "11-22,33-44";
-        assert_eq!(id_sum(id_ranges), 110)
+        assert_eq!(id_sum(id_ranges, invalid_id), 110)
     }
 
     #[test]
     fn test_id_sum_example() {
         let id_ranges = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
-        assert_eq!(id_sum(id_ranges), 1227775554)
+        assert_eq!(id_sum(id_ranges, invalid_id), 1227775554)
+    }
+
+    #[test]
+    fn test_id_sum_other_func_example() {
+        let id_ranges = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
+        assert_eq!(id_sum(id_ranges, invalid_id_two), 4174379265)
     }
 
     #[test]
