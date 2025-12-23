@@ -11,42 +11,27 @@ fn id_sum(ranges: &str, invalid_func: fn(i64) -> bool) -> i64 {
         .trim_end()
         .split(",")
         .map(|range| {
-            let (start, end) = range.split_once("-").unwrap();
+            let (start, end) = range.split_once('-').expect("Should have '-' in range.");
             let start: i64 = start
                 .parse()
-                .unwrap_or_else(|_| panic!("ERROR: could not parse start as i64: {:?}", start));
+                .unwrap_or_else(|_| panic!("ERROR: could not parse start as i64: {start:?}"));
             let end: i64 = end
                 .parse()
-                .unwrap_or_else(|_| panic!("ERROR: could not parse end as i64: {:?}", end));
+                .unwrap_or_else(|_| panic!("ERROR: could not parse end as i64: {end:?}"));
 
-            let mut total = 0;
-            for id in start..=end {
-                if invalid_func(id) {
-                    total += id;
-                }
-            }
-
-            total
+            (start..=end).filter(|&id| invalid_func(id)).sum::<i64>()
         })
         .sum()
 }
 
 fn invalid_id_two(id: i64) -> bool {
-    let digits = id.checked_ilog10().unwrap_or(0) + 1;
     let str = id.to_string();
+    let digits = str.len();
 
-    for size in 1..=(digits / 2) {
-        let first = &str.as_bytes()[..size as usize];
-        let v = str
-            .as_bytes()
-            .chunks(size as usize)
-            .all(|chunk| chunk == first);
-        if v {
-            return true;
-        }
-    }
-
-    false
+    (1..=(digits / 2)).any(|size| {
+        let first = &str.as_bytes()[..size];
+        str.as_bytes().chunks(size).all(|chunk| chunk == first)
+    })
 }
 
 fn invalid_id(id: i64) -> bool {
