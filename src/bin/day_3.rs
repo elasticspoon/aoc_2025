@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::read_to_string};
+use std::fs::read_to_string;
 
 fn main() {
     let input = read_to_string("input/day3.txt").expect("Should have been able to read file");
@@ -10,17 +10,6 @@ fn total_joltage(banks: &str) -> u32 {
 }
 
 fn bank_joltage(bank: &str) -> u32 {
-    // let mut char_counts: HashMap<char, usize> = HashMap::with_capacity(10);
-    // let digits: Vec<u32> = bank
-    //     .chars()
-    //     .filter(|char| {
-    //         let char_count = char_counts.get(char).unwrap_or(&0) + 1;
-    //         char_counts.insert(*char, char_count);
-    //         char_count <= 2
-    //     })
-    //     .map(|char| char.to_digit(10).unwrap())
-    //     .collect();
-
     let digits: Vec<u32> = bank
         .chars()
         .map(|char| char.to_digit(10).unwrap())
