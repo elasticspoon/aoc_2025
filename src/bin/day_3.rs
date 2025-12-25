@@ -13,18 +13,20 @@ fn total_joltage(banks: &str, digits: usize) -> u64 {
 fn bank_joltage(bank: &str, digits_count: usize) -> u64 {
     let digits: Vec<u64> = bank
         .chars()
-        .map(|char| char.to_digit(10).unwrap() as u64)
+        .filter_map(|char| char.to_digit(10))
+        .map(|d| d as u64)
         .collect();
 
     let last_index = digits.len() - digits_count;
-    bank_joltage_rec(digits, 0, last_index)
+    bank_joltage_rec(&digits, 0, last_index)
 }
 
-fn bank_joltage_rec(bank: Vec<u64>, start: usize, end: usize) -> u64 {
+fn bank_joltage_rec(bank: &[u64], start: usize, end: usize) -> u64 {
     assert!(start <= end);
     if end >= bank.len() {
         return 0;
     }
+
     let mut max_index = start;
     let mut max_value = bank[max_index];
     for (index, value) in bank[start..=end].iter().enumerate() {
@@ -34,6 +36,7 @@ fn bank_joltage_rec(bank: Vec<u64>, start: usize, end: usize) -> u64 {
             max_index = index;
         }
     }
+
     let pow = bank.len() - end - 1;
     max_value * 10_u64.pow(pow as u32) + bank_joltage_rec(bank, max_index + 1, end + 1)
 }
@@ -74,7 +77,7 @@ mod tests {
             .collect();
 
         let len = digits.len() - 2;
-        let got = bank_joltage_rec(digits, 0, len);
+        let got = bank_joltage_rec(&digits, 0, len);
         assert_eq!(got, 98);
     }
 
