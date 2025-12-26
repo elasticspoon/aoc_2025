@@ -22,14 +22,11 @@ fn num_forklift_accessible_repeat(grid: &str) -> i32 {
 
     num_removed
 }
-fn num_forklift_accessible(grid: &str) -> usize {
+fn num_forklift_accessible(grid: &str) -> i32 {
     let counts = build_access_counts(grid);
+    let (removed_count, _) = remove_packages(counts);
 
-    counts
-        .values()
-        .filter(|&&val| val < 4)
-        .collect::<Vec<&i32>>()
-        .len()
+    removed_count
 }
 
 fn remove_packages(mut counts: HashMap<Coord, i32>) -> (i32, HashMap<Coord, i32>) {
