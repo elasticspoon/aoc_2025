@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, ops::RangeInclusive};
+use std::{cmp::max, fs::read_to_string, ops::RangeInclusive};
 
 fn main() {
     let input = read_to_string("input/day5.txt").expect("Should have been able to read file");
@@ -12,8 +12,7 @@ fn count_possible_fresh(input: &str) -> u64 {
 
     good_ranges
         .iter()
-        .map(|range| (*range.start(), *range.end()))
-        .map(|(start, end)| end - start + 1)
+        .map(|range| range.end() - range.start() + 1)
         .sum()
 }
 
@@ -24,11 +23,10 @@ fn count_fresh(input: &str) -> u64 {
     ids.lines()
         .map(|id| {
             id.parse::<u64>()
-                .expect("Should be able to parse id to u64")
+                .unwrap_or_else(|err| panic!("Should be able to parse id: {id} to u64: {err}"))
         })
         .filter(|id| good_ranges.iter().any(|range| range.contains(id)))
-        .collect::<Vec<_>>()
-        .len() as u64
+        .count() as u64
 }
 
 fn fresh_ranges(ids: &str) -> Vec<RangeInclusive<u64>> {
@@ -43,22 +41,19 @@ fn fresh_ranges(ids: &str) -> Vec<RangeInclusive<u64>> {
         })
         .collect();
 
+    assert!(!vec.is_empty(), "input ranges should not be empty");
     vec.sort_by_key(|(start, _)| *start);
 
     let mut ranges = Vec::new();
 
-    let mut current_start = vec[0].0;
-    let mut current_end = vec[0].1;
+    let (mut current_start, mut current_end) = vec[0];
     for (start, end) in vec {
         if start > current_end {
             ranges.push(current_start..=current_end);
             current_start = start;
             current_end = end;
-            continue;
-        }
-
-        if start <= current_end && end > current_end {
-            current_end = end;
+        } else {
+            current_end = max(current_end, end)
         }
     }
     ranges.push(current_start..=current_end);
