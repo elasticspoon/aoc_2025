@@ -22,6 +22,7 @@ fn num_forklift_accessible_repeat(grid: &str) -> i32 {
 
     num_removed
 }
+
 fn num_forklift_accessible(grid: &str) -> i32 {
     let counts = build_access_counts(grid);
     let (removed_count, _) = remove_packages(counts);
@@ -30,27 +31,23 @@ fn num_forklift_accessible(grid: &str) -> i32 {
 }
 
 fn remove_packages(mut counts: HashMap<Coord, i32>) -> (i32, HashMap<Coord, i32>) {
-    let mut num_removed = 0;
-    let mut increments: HashMap<Coord, i32> = HashMap::new();
-    for (current, val) in counts.iter() {
-        if *val >= 4 {
-            continue;
-        }
-        let current_clone = Coord(current.0, current.1);
-        increments.insert(current_clone, SKIPPABLE);
-        num_removed += 1;
-        for adjacent in DIRECTIONS {
-            let target = current + &adjacent;
-            if counts.contains_key(&target) {
-                increments
-                    .entry(target)
-                    .and_modify(|val| *val -= 1)
-                    .or_insert(-1);
+    let values_to_remove: Vec<Coord> = counts
+        .iter()
+        .filter(|(_, value)| **value < 4)
+        .map(|(key, _)| *key)
+        .collect();
+
+    let num_removed = values_to_remove.len() as i32;
+
+    for coord in values_to_remove {
+        counts.insert(coord, SKIPPABLE);
+
+        for adjacent in &DIRECTIONS {
+            let target = &coord + adjacent;
+            if let Some(val) = counts.get_mut(&target) {
+                *val -= 1;
             }
         }
-    }
-    for (current, val) in counts.iter_mut() {
-        *val += increments.get(current).unwrap_or(&0);
     }
 
     (num_removed, counts)
@@ -89,7 +86,7 @@ fn build_access_counts(grid: &str) -> HashMap<Coord, i32> {
     access
 }
 
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 struct Coord(i32, i32);
 
 impl Coord {
