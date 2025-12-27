@@ -64,22 +64,24 @@ fn build_access_counts(grid: &str) -> HashMap<Coord, i32> {
 
     for (y_index, line) in lines.iter().enumerate() {
         for (x_index, char) in line.chars().enumerate() {
-            if char == '.' {
-                let current = Coord(x_index as i32, y_index as i32);
-                access.insert(current, SKIPPABLE);
-            }
-            for adjacent in DIRECTIONS {
-                let current = Coord(x_index as i32, y_index as i32);
-                let target = &current + &adjacent;
-                if target.valid(x_len as i32, y_len as i32) {
-                    let old_count = access.get(&target).unwrap_or(&0);
-                    let new_count = match char {
-                        '@' => *old_count + 1,
-                        '.' => *old_count,
-                        _ => panic!("char must be '@' or '.'. got: {}", char),
-                    };
-                    access.insert(target, new_count);
+            match char {
+                '.' => {
+                    let current = Coord(x_index as i32, y_index as i32);
+                    access.insert(current, SKIPPABLE);
                 }
+                '@' => {
+                    let current = Coord(x_index as i32, y_index as i32);
+                    access.entry(current).or_insert(0);
+
+                    let current = Coord(x_index as i32, y_index as i32);
+                    for adjacent in &DIRECTIONS {
+                        let target = &current + adjacent;
+                        if target.valid(x_len as i32, y_len as i32) {
+                            *access.entry(target).or_insert(0) += 1;
+                        }
+                    }
+                }
+                _ => panic!("char must be '@' or '.'. got: {}", char),
             }
         }
     }
