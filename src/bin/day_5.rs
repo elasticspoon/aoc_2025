@@ -3,6 +3,18 @@ use std::{fs::read_to_string, ops::RangeInclusive};
 fn main() {
     let input = read_to_string("input/day5.txt").expect("Should have been able to read file");
     println!("part 1: {}", count_fresh(&input));
+    println!("part 2: {}", count_possible_fresh(&input));
+}
+
+fn count_possible_fresh(input: &str) -> u64 {
+    let (input_ranges, _) = input.split_once("\n\n").expect("Should contain '\\n\\n'");
+    let good_ranges = fresh_ranges(input_ranges);
+
+    good_ranges
+        .iter()
+        .map(|range| (*range.start(), *range.end()))
+        .map(|(start, end)| end - start + 1)
+        .sum()
 }
 
 fn count_fresh(input: &str) -> u64 {
@@ -122,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn test_count_fresh_gap_filled_example() {
+    fn test_count_possible_fresh_example() {
         let ids = "3-5
 10-14
 16-20
@@ -132,10 +144,9 @@ mod tests {
 5
 8
 11
-15
 17
 32";
 
-        assert_eq!(count_fresh(ids), 4);
+        assert_eq!(count_possible_fresh(ids), 14);
     }
 }
