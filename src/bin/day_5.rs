@@ -1,8 +1,4 @@
-use std::{
-    collections::HashSet,
-    fs::read_to_string,
-    ops::{Range, RangeInclusive},
-};
+use std::{fs::read_to_string, ops::RangeInclusive};
 
 fn main() {
     let input = read_to_string("input/day5.txt").expect("Should have been able to read file");
@@ -10,8 +6,8 @@ fn main() {
 }
 
 fn count_fresh(input: &str) -> u64 {
-    let (good_ranges, ids) = input.split_once("\n\n").expect("Should contain '\\n\\n'");
-    let good_ranges = fresh_ranges(good_ranges);
+    let (input_ranges, ids) = input.split_once("\n\n").expect("Should contain '\\n\\n'");
+    let good_ranges = fresh_ranges(input_ranges);
 
     ids.lines()
         .map(|id| {
@@ -24,21 +20,72 @@ fn count_fresh(input: &str) -> u64 {
 }
 
 fn fresh_ranges(ids: &str) -> Vec<RangeInclusive<u64>> {
-    ids.lines()
+    let mut vec: Vec<(u64, u64)> = ids
+        .lines()
         .map(|range| {
             let (start, end) = range.split_once('-').expect("ranges must contain a '-'");
-            let (start, end): (u64, u64) = (
+            (
                 start.parse().expect("cannot convert to u64"),
                 end.parse().expect("cannot convert to u64"),
-            );
-            start..=end
+            )
         })
-        .collect()
+        .collect();
+
+    vec.sort_by_key(|(start, _)| *start);
+
+    let mut ranges = Vec::new();
+
+    let mut current_start = vec[0].0;
+    let mut current_end = vec[0].1;
+    for (start, end) in vec {
+        if start > current_end {
+            ranges.push(current_start..=current_end);
+            current_start = start;
+            current_end = end;
+            continue;
+        }
+
+        if start <= current_end && end > current_end {
+            current_end = end;
+        }
+    }
+    ranges.push(current_start..=current_end);
+
+    ranges
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_fresh_ranges_overlapping() {
+        let input = "0-2
+1-4
+6-8";
+        let want = Vec::from([0..=4, 6..=8]);
+
+        assert_eq!(fresh_ranges(input), want);
+    }
+
+    #[test]
+    fn test_fresh_ranges_consuming() {
+        let input = "0-9
+1-4
+6-8";
+        let want = Vec::from([0..=9]);
+
+        assert_eq!(fresh_ranges(input), want);
+    }
+
+    #[test]
+    fn test_fresh_ranges_short() {
+        let input = "0-4
+6-8";
+        let want = Vec::from([0..=4, 6..=8]);
+
+        assert_eq!(fresh_ranges(input), want);
+    }
 
     #[test]
     fn test_count_fresh_short() {
@@ -72,5 +119,23 @@ mod tests {
 32";
 
         assert_eq!(count_fresh(ids), 3);
+    }
+
+    #[test]
+    fn test_count_fresh_gap_filled_example() {
+        let ids = "3-5
+10-14
+16-20
+12-18
+
+1
+5
+8
+11
+15
+17
+32";
+
+        assert_eq!(count_fresh(ids), 4);
     }
 }
