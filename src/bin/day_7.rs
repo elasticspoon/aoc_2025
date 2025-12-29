@@ -7,13 +7,7 @@ fn main() {
 }
 
 fn count_timelines(input: &str) -> usize {
-    let start = input
-        .lines()
-        .next()
-        .unwrap()
-        .find("S")
-        .expect("missing S in first line");
-
+    let start = start_index(input);
     let lasers = HashMap::from([(start, 1)]);
     input
         .lines()
@@ -23,51 +17,45 @@ fn count_timelines(input: &str) -> usize {
         .sum()
 }
 
-fn count_splits(input: &str) -> usize {
-    let start = input
+fn start_index(input: &str) -> usize {
+    input
         .lines()
         .next()
-        .unwrap()
-        .find("S")
-        .expect("missing S in first line");
+        .and_then(|first_line| first_line.find('S'))
+        .expect("missing S in first line")
+}
 
+fn count_splits(input: &str) -> usize {
+    let start = start_index(input);
     let lasers = HashMap::from([(start, 1)]);
     input
         .lines()
         .skip(1)
         .fold((0, lasers), |(split_count, map), row| {
-            let (count, set) = split_lasers(map, row);
-            (split_count + count, set)
+            let (count, new_map) = split_lasers(map, row);
+            (split_count + count, new_map)
         })
         .0
 }
 
 fn split_lasers(lasers: HashMap<usize, usize>, row: &str) -> (usize, HashMap<usize, usize>) {
-    let result = HashMap::new();
-
     lasers.into_iter().fold(
-        (0, result),
-        |(mut split_count, mut set), (val, timeline_count)| {
-            if let Some(char) = row.get(val..=val) {
+        (0, HashMap::new()),
+        |(mut split_count, mut laser_pos_set), (laser_pos, timeline_count)| {
+            if let Some(char) = row.as_bytes().get(laser_pos) {
                 match char {
-                    "." => {
-                        set.entry(val)
-                            .and_modify(|v| *v += timeline_count)
-                            .or_insert(timeline_count);
+                    b'.' => {
+                        *laser_pos_set.entry(laser_pos).or_insert(0) += timeline_count;
                     }
-                    "^" => {
+                    b'^' => {
                         split_count += 1;
-                        set.entry(val - 1)
-                            .and_modify(|v| *v += timeline_count)
-                            .or_insert(timeline_count);
-                        set.entry(val + 1)
-                            .and_modify(|v| *v += timeline_count)
-                            .or_insert(timeline_count);
+                        *laser_pos_set.entry(laser_pos - 1).or_insert(0) += timeline_count;
+                        *laser_pos_set.entry(laser_pos + 1).or_insert(0) += timeline_count;
                     }
                     _ => panic!("invalid char: {char}"),
                 };
             }
-            (split_count, set)
+            (split_count, laser_pos_set)
         },
     )
 }
