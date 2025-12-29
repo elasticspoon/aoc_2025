@@ -2,7 +2,7 @@ use std::fs::read_to_string;
 
 fn main() {
     let input = read_to_string("input/day6.txt").expect("Should have been able to read file");
-    println!("part 1: {}", do_math(&input, covert_input_human));
+    println!("part 1: {}", do_math(&input, convert_input_human));
     println!("part 2: {}", do_math(&input, covert_input_ceph));
 }
 
@@ -33,18 +33,16 @@ fn do_math(input: &str, coversion_func: fn(input: &str) -> Vec<Vec<String>>) -> 
         .sum()
 }
 
-fn covert_input_human(input: &str) -> Vec<Vec<String>> {
+fn convert_input_human(input: &str) -> Vec<Vec<String>> {
     let problem_count = input.lines().next().unwrap().split_whitespace().count();
-    let line_count = input.lines().count();
     let mut result: Vec<Vec<String>> = Vec::with_capacity(problem_count);
 
-    for _ in 0..problem_count {
-        let problem = Vec::with_capacity(line_count);
-        result.push(problem);
-    }
-
+    let line_count = input.lines().count();
     for line in input.lines() {
         for (problem_index, val) in line.split_whitespace().enumerate() {
+            if problem_index >= result.len() {
+                result.push(Vec::with_capacity(line_count));
+            }
             result[problem_index].push(val.to_string());
         }
     }
@@ -64,10 +62,11 @@ fn sizes(inputs: &str) -> Vec<(&str, usize)> {
             }
         })
         .collect();
-    lens[1..lens.len()]
-        .iter()
+
+    lens.into_iter()
+        .skip(1)
         .zip(syms)
-        .map(|(&len, sym)| (sym, len))
+        .map(|(len, sym)| (sym, len))
         .collect()
 }
 
@@ -87,27 +86,28 @@ fn covert_input_ceph(input: &str) -> Vec<Vec<String>> {
         .map(|(problem_num, (action, problem_size))| {
             let mut strings: Vec<String> = Vec::with_capacity(*problem_size);
             for value_number in (0..*problem_size).rev() {
-                let mut buf = String::with_capacity(*problem_size);
+                let mut number_buffer = String::with_capacity(*problem_size);
                 let offset: usize = problem_sizes[0..problem_num]
                     .iter()
                     .map(|(_, len)| *len + 1)
                     .sum();
                 for index in 0..(line_count - 1) {
-                    let char_index = offset + value_number + index * line_len;
-                    let char = input
-                        .get(char_index..=char_index)
+                    let digit_index = offset + value_number + index * line_len;
+                    let digit_char = input
+                        .chars()
+                        .nth(digit_index)
                         .expect("could not find char at index");
-                    if char != " " {
-                        buf.push_str(char);
+                    if digit_char != ' ' {
+                        number_buffer.push(digit_char);
                     }
                 }
-                strings.push(buf);
+                strings.push(number_buffer);
             }
             strings.push(action.to_string());
 
             strings
         })
-        .collect::<Vec<Vec<String>>>()
+        .collect()
 }
 
 #[cfg(test)]
@@ -141,7 +141,7 @@ mod tests {
             ["64", "23", "314", "+"],
         ];
 
-        assert_eq!(covert_input_human(input), want)
+        assert_eq!(convert_input_human(input), want)
     }
 
     #[test]
@@ -178,7 +178,7 @@ mod tests {
 *   +   *   +  
 ";
 
-        assert_eq!(do_math(input, covert_input_human), 4277556)
+        assert_eq!(do_math(input, convert_input_human), 4277556)
     }
 
     #[test]
