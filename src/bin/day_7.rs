@@ -14,13 +14,13 @@ fn count_timelines(input: &str) -> usize {
         .find("S")
         .expect("missing S in first line");
 
-    let mut lasers = HashMap::from([(start, 1)]);
-    for row in input.lines().skip(1) {
-        let (_, set) = split_lasers(lasers, row);
-        lasers = set;
-    }
-
-    lasers.values().sum()
+    let lasers = HashMap::from([(start, 1)]);
+    input
+        .lines()
+        .skip(1)
+        .fold(lasers, |map, row| split_lasers(map, row).1)
+        .values()
+        .sum()
 }
 
 fn count_splits(input: &str) -> usize {
@@ -31,15 +31,15 @@ fn count_splits(input: &str) -> usize {
         .find("S")
         .expect("missing S in first line");
 
-    let mut split_count = 0;
-    let mut lasers = HashMap::from([(start, 1)]);
-    for row in input.lines().skip(1) {
-        let (count, set) = split_lasers(lasers, row);
-        lasers = set;
-        split_count += count;
-    }
-
-    split_count
+    let lasers = HashMap::from([(start, 1)]);
+    input
+        .lines()
+        .skip(1)
+        .fold((0, lasers), |(split_count, map), row| {
+            let (count, set) = split_lasers(map, row);
+            (split_count + count, set)
+        })
+        .0
 }
 
 fn split_lasers(lasers: HashMap<usize, usize>, row: &str) -> (usize, HashMap<usize, usize>) {
