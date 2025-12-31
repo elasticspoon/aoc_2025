@@ -60,42 +60,30 @@ const TOP_N_CIRCUITS: usize = 3;
 fn top_circuits(input: &str, count: usize) -> usize {
     let connections = close_connections(input, count);
     let mut circuits: Vec<HashSet<Coord>> = Vec::new();
-    println!(
-        "{}",
-        connections
-            .iter()
-            .map(|conn| format!("{}", conn))
-            .collect::<Vec<String>>()
-            .join("\n")
-    );
 
     for connection in connections {
-        if let Some(circuit) = circuits
+        let mut connected_circuits = circuits
             .iter_mut()
-            .find(|circuit| circuit.iter().any(|coord| connection.contains(*coord)))
-        {
-            println!(
-                "adding to existing: [{:?}, {:?}]",
-                connection.start, connection.end
-            );
-            circuit.insert(connection.start);
-            circuit.insert(connection.end);
-            println!("new circuit: {circuit:?}")
-        } else {
-            println!(
-                "creating new circuit: [{:?}, {:?}]",
-                connection.start, connection.end
-            );
-            circuits.push(HashSet::from([connection.start, connection.end]));
+            .enumerate()
+            .filter(|(_, circuit)| circuit.iter().any(|coord| connection.contains(*coord)));
+
+        match (connected_circuits.next(), connected_circuits.next()) {
+            (Some((_, circuit)), None) => {
+                circuit.insert(connection.start);
+                circuit.insert(connection.end);
+            }
+            (Some((_, circuit_one)), Some((index_two, circuit_two))) => {
+                circuit_one.extend(circuit_two.iter());
+                circuits.remove(index_two);
+            }
+            (None, None) => circuits.push(HashSet::from([connection.start, connection.end])),
+            _ => unreachable!(),
         }
     }
-    println!("{circuits:?}");
 
     let mut conn_lens: Vec<usize> = circuits.iter().map(|f| f.len()).collect();
     conn_lens.sort_unstable_by(|a, b| b.cmp(a));
-    println!("{conn_lens:?}");
     conn_lens.truncate(TOP_N_CIRCUITS);
-    println!("{conn_lens:?}");
 
     conn_lens.iter().product()
 }
