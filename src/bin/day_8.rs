@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::collections::HashSet;
+use std::fmt::Display;
 use std::{collections::BinaryHeap, fs::read_to_string};
 
 fn main() {
@@ -12,6 +13,11 @@ struct Conn {
     dist: usize,
     start: Coord,
     end: Coord,
+}
+impl Display for Conn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} -> {}", self.start.0, self.end.0)
+    }
 }
 
 impl Ord for Conn {
@@ -52,17 +58,34 @@ impl Conn {
 
 const TOP_N_CIRCUITS: usize = 3;
 fn top_circuits(input: &str, count: usize) -> usize {
-    let tuples = close_tuples(input, count);
+    let connections = close_connections(input, count);
     let mut circuits: Vec<HashSet<Coord>> = Vec::new();
+    println!(
+        "{}",
+        connections
+            .iter()
+            .map(|conn| format!("{}", conn))
+            .collect::<Vec<String>>()
+            .join("\n")
+    );
 
-    for connection in tuples {
+    for connection in connections {
         if let Some(circuit) = circuits
             .iter_mut()
             .find(|circuit| circuit.iter().any(|coord| connection.contains(*coord)))
         {
+            println!(
+                "adding to existing: [{:?}, {:?}]",
+                connection.start, connection.end
+            );
             circuit.insert(connection.start);
             circuit.insert(connection.end);
+            println!("new circuit: {circuit:?}")
         } else {
+            println!(
+                "creating new circuit: [{:?}, {:?}]",
+                connection.start, connection.end
+            );
             circuits.push(HashSet::from([connection.start, connection.end]));
         }
     }
@@ -77,7 +100,7 @@ fn top_circuits(input: &str, count: usize) -> usize {
     conn_lens.iter().product()
 }
 
-fn close_tuples(input: &str, count: usize) -> Vec<Conn> {
+fn close_connections(input: &str, count: usize) -> Vec<Conn> {
     let tuples = tuples(input);
     let mut res: BinaryHeap<Conn> = BinaryHeap::new();
 
@@ -177,7 +200,7 @@ mod tests {
 984,92,344
 425,690,689";
 
-        let got = close_tuples(input, 4);
+        let got = close_connections(input, 4);
         let want = Vec::from([
             Conn::new((162, 817, 812), (425, 690, 689)),
             Conn::new((162, 817, 812), (431, 825, 988)),
