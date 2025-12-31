@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::{collections::BinaryHeap, fs::read_to_string};
 
 fn main() {
@@ -44,33 +45,32 @@ impl Conn {
         }
     }
 
-    fn is_connecting(&self, other: &Conn) -> bool {
-        self.start == other.start
-            || self.start == other.end
-            || self.end == other.start
-            || self.end == other.end
+    fn contains(&self, coord: Coord) -> bool {
+        self.start == coord || self.end == coord
     }
 }
 
 const TOP_N_CIRCUITS: usize = 3;
 fn top_circuits(input: &str, count: usize) -> usize {
     let tuples = close_tuples(input, count);
-    let mut circuits: Vec<Vec<Conn>> = Vec::new();
+    let mut circuits: Vec<HashSet<Coord>> = Vec::new();
 
     for connection in tuples {
-        if let Some(circuit) = circuits.iter_mut().find(|circuit| {
-            circuit
-                .iter()
-                .any(|target_conn| target_conn.is_connecting(&connection))
-        }) {
-            circuit.push(connection);
+        if let Some(circuit) = circuits
+            .iter_mut()
+            .find(|circuit| circuit.iter().any(|coord| connection.contains(*coord)))
+        {
+            circuit.insert(connection.start);
+            circuit.insert(connection.end);
         } else {
-            circuits.push(vec![connection]);
+            circuits.push(HashSet::from([connection.start, connection.end]));
         }
     }
+    println!("{circuits:?}");
 
-    let mut conn_lens: Vec<usize> = circuits.iter().map(|f| f.len() + 1).collect();
+    let mut conn_lens: Vec<usize> = circuits.iter().map(|f| f.len()).collect();
     conn_lens.sort_unstable_by(|a, b| b.cmp(a));
+    println!("{conn_lens:?}");
     conn_lens.truncate(TOP_N_CIRCUITS);
     println!("{conn_lens:?}");
 
