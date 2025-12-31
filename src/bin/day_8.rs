@@ -6,6 +6,7 @@ use std::{collections::BinaryHeap, fs::read_to_string};
 fn main() {
     let input = read_to_string("input/day8.txt").expect("Should have been able to read file");
     println!("part 1: {}", top_circuits(&input, 1000));
+    println!("part 2: {}", last_two_circuits(&input));
 }
 
 #[derive(Eq, Hash, PartialEq, Debug)]
@@ -56,9 +57,42 @@ impl Conn {
     }
 }
 
+const TOTAL_BOXES: usize = 1000;
+fn last_two_circuits(input: &str) -> usize {
+    let connections = close_connections(input, None);
+    let mut circuits: Vec<HashSet<Coord>> = Vec::new();
+
+    for connection in connections {
+        let mut connected_circuits = circuits
+            .iter_mut()
+            .enumerate()
+            .filter(|(_, circuit)| circuit.iter().any(|coord| connection.contains(*coord)));
+
+        match (connected_circuits.next(), connected_circuits.next()) {
+            (Some((_, circuit)), None) => {
+                circuit.insert(connection.start);
+                circuit.insert(connection.end);
+            }
+            (Some((_, circuit_one)), Some((index_two, circuit_two))) => {
+                circuit_one.extend(circuit_two.iter());
+                circuits.remove(index_two);
+            }
+            (None, None) => circuits.push(HashSet::from([connection.start, connection.end])),
+            _ => unreachable!(),
+        }
+
+        if let Some(len_first) = circuits.first().map(|c| c.len())
+            && len_first == TOTAL_BOXES
+        {
+            return connection.start.0 * connection.end.0;
+        }
+    }
+
+    unreachable!()
+}
 const TOP_N_CIRCUITS: usize = 3;
 fn top_circuits(input: &str, count: usize) -> usize {
-    let connections = close_connections(input, count);
+    let connections = close_connections(input, Some(count));
     let mut circuits: Vec<HashSet<Coord>> = Vec::new();
 
     for connection in connections {
@@ -88,14 +122,16 @@ fn top_circuits(input: &str, count: usize) -> usize {
     conn_lens.iter().product()
 }
 
-fn close_connections(input: &str, count: usize) -> Vec<Conn> {
+fn close_connections(input: &str, count: Option<usize>) -> Vec<Conn> {
     let tuples = tuples(input);
     let mut res: BinaryHeap<Conn> = BinaryHeap::new();
 
     for (index, &current_coord) in tuples.iter().enumerate() {
         for target_coord in tuples.iter().skip(index + 1) {
             let connection = Conn::new(current_coord, *target_coord);
-            if res.len() >= count {
+            if let Some(count) = count
+                && res.len() >= count
+            {
                 if let Some(largest) = res.peek()
                     && largest.dist > connection.dist
                 {
@@ -188,7 +224,7 @@ mod tests {
 984,92,344
 425,690,689";
 
-        let got = close_connections(input, 4);
+        let got = close_connections(input, Some(4));
         let want = Vec::from([
             Conn::new((162, 817, 812), (425, 690, 689)),
             Conn::new((162, 817, 812), (431, 825, 988)),
