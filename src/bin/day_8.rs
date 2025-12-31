@@ -71,28 +71,33 @@ fn top_circuits(input: &str, count: usize) -> usize {
 
     let mut conn_lens: Vec<usize> = circuits.iter().map(|f| f.len() + 1).collect();
     conn_lens.sort_unstable_by(|a, b| b.cmp(a));
-    println!("{conn_lens:?}");
-    println!("{}", conn_lens.iter().sum::<usize>());
     conn_lens.truncate(TOP_N_CIRCUITS);
+    println!("{conn_lens:?}");
 
     conn_lens.iter().product()
 }
 
 fn close_tuples(input: &str, count: usize) -> Vec<Conn> {
     let tuples = tuples(input);
-    let mut res = Vec::new();
+    let mut res: BinaryHeap<Conn> = BinaryHeap::new();
 
     for (index, &current_coord) in tuples.iter().enumerate() {
         for target_coord in tuples.iter().skip(index + 1) {
-            res.push(Conn::new(current_coord, *target_coord));
+            let connection = Conn::new(current_coord, *target_coord);
+            if res.len() >= count {
+                if let Some(largest) = res.peek()
+                    && largest.dist > connection.dist
+                {
+                    res.pop();
+                    res.push(connection);
+                }
+            } else {
+                res.push(connection);
+            }
         }
     }
 
-    let mut res = res.into_iter().collect::<Vec<Conn>>();
-    res.sort_unstable_by_key(|conn| conn.dist);
-    res.truncate(count);
-
-    res
+    res.into_sorted_vec()
 }
 
 fn coord_dist(lhs: &Coord, rhs: &Coord) -> usize {
