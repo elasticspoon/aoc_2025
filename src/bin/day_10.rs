@@ -1,8 +1,40 @@
-use std::fs::read_to_string;
+use std::{collections::HashSet, fs::read_to_string};
 
 fn main() {
     let input = read_to_string("input/day10.txt").expect("Should have been able to read file");
-    convert_input(&input);
+    println!("part 1: {}", min_press_sum(&input));
+}
+
+fn min_press_sum(input: &str) -> usize {
+    let tuples = convert_input(input);
+    tuples
+        .into_iter()
+        .map(|(target, buttons, _)| min_presses(target, buttons))
+        .sum()
+}
+
+fn min_presses(target: u16, buttons: Vec<u16>) -> usize {
+    let mut tested_combos: HashSet<u16> = HashSet::from([0]);
+    let mut loop_count = 1;
+
+    loop {
+        let mut new_combos = HashSet::new();
+        for &button in buttons.iter() {
+            for &tested in tested_combos.clone().iter() {
+                let new_combo = tested ^ button;
+                if new_combo == target {
+                    return loop_count;
+                } else {
+                    new_combos.insert(new_combo);
+                }
+            }
+        }
+        loop_count += 1;
+        tested_combos.extend(new_combos);
+        if loop_count > 100 {
+            panic!("loop count too high. button combo may not exist.")
+        }
+    }
 }
 
 fn convert_input(input: &str) -> Vec<(u16, Vec<u16>, Vec<u16>)> {
@@ -65,7 +97,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_area_points_flat() {
+    fn test_min_presses_sum_example() {
+        let input = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
+[...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
+[.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}";
+        let got = min_press_sum(input);
+
+        assert_eq!(7, got);
+    }
+
+    #[test]
+    fn test_min_presses() {
+        let button_input = vec![0b1000, 0b1010, 0b100, 0b1100, 0b101, 0b11];
+        let got = min_presses(0b110, button_input);
+
+        assert_eq!(2, got);
+    }
+
+    #[test]
+    fn test_convert_input_example() {
         let input = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}
 [...#.] (0,2,3,4) (2,3) (0,4) (0,1,2) (1,2,3,4) {7,5,12,7,2}
 [.###.#] (0,1,2,3,4) (0,3,4) (0,1,2,4,5) (1,2) {10,11,11,5,10,5}";
